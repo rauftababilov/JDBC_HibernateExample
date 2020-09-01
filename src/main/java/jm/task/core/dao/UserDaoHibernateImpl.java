@@ -11,24 +11,6 @@ import java.util.List;
 
 public class UserDaoHibernateImpl implements UserDao {
 
-    // метод для выполнения транзакции, во избежание дублирования кода
-    private void doTransaction(Session session, String SQL) {
-        Transaction transaction = null;
-
-        try {
-            Query query = session.createNativeQuery(SQL);
-            transaction = session.beginTransaction();
-            query.executeUpdate();
-
-            transaction.commit();
-        } catch (Exception e) {
-            if (transaction != null) {
-                transaction.rollback();
-            }
-        }
-        session.close();
-    }
-
     @Override
     public void createUsersTable() {
         Session session = Util.openHibernateSession();
@@ -40,7 +22,9 @@ public class UserDaoHibernateImpl implements UserDao {
                 "  `age` INT NOT NULL," +
                 "  PRIMARY KEY (`id`));";
 
-        doTransaction(session, SQL);
+        session.createSQLQuery(SQL).executeUpdate();
+        session.close();
+
     }
 
     @Override
@@ -102,8 +86,6 @@ public class UserDaoHibernateImpl implements UserDao {
     @Override
     public List<User> getAllUsers() {
         Session session = Util.openHibernateSession();
-        final Transaction transaction = session.getTransaction();
-        transaction.begin();
 
         List<User> users = session.createQuery("FROM User").list();
 
